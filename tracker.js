@@ -83,6 +83,7 @@ const bootWatch = setInterval(() => {
 function finalizeSession() {
     if (isResetting) return;
     isResetting = true;
+    let lastPointerType     = 'mouse'; // updated on every pointerdown
     clearTimeout(idleTimer);
 
     // 1. Capture duration
@@ -100,7 +101,7 @@ function finalizeSession() {
     duration : sessionDuration,
     breakdown: JSON.stringify(rawData),
     type     : totalClicks > 0 ? "CLICKED" : sessionDuration > 5 ? "BROWSED" : "TAPPED",
-    touch    : ('ontouchstart' in window) ? 1 : 0
+touch    : lastPointerType === 'touch' ? 1 : 0
 })], { type: 'text/plain' }));
 
     // 3. Wipe
@@ -156,8 +157,10 @@ document.addEventListener('touchstart', (e) => {
 // Every other interaction type — all call onInteraction()
 document.addEventListener('mousemove',   () => onInteraction(), { passive: true });
 document.addEventListener('wheel',       () => onInteraction(), { passive: true });
-document.addEventListener('pointerdown', () => onInteraction(), { passive: true });
-
+document.addEventListener('pointerdown', (e) => { 
+    lastPointerType = e.pointerType; 
+    onInteraction(); 
+}, { passive: true });
 if (viewport) {
     viewport.addEventListener('touchstart',  () => onInteraction(), { passive: true });
     viewport.addEventListener('touchmove',   () => onInteraction(), { passive: true });
