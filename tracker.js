@@ -130,30 +130,21 @@ touch    : lastPointerType === 'touch' ? 1 : 0
 }
 
 // ─── CLICK TRACKING ───────────────────────────────────────────────────────────
-document.addEventListener('mousedown', (e) => {
-    if (isResetting) return;
-    const target = e.target.closest('path, polygon, circle, rect');
-    if (!target) return;
-    onInteraction();
-    totalClicks++;
-    const allShapes = Array.from(document.querySelectorAll('path, polygon, circle, rect'));
-    const idx = allShapes.indexOf(target);
-    rawData[idx] = (rawData[idx] || 0) + 1;
-});
-
-// Touchscreen district taps
-document.addEventListener('touchstart', (e) => {
+// Single pointerdown replaces mousedown + touchstart
+// Fires exactly once per tap on both touchscreen and laptop — no double counting
+document.addEventListener('pointerdown', (e) => {
     if (isResetting) return;
     const target = e.target.closest('path, polygon, circle, rect');
     if (target) {
+        onInteraction();
         totalClicks++;
         const allShapes = Array.from(document.querySelectorAll('path, polygon, circle, rect'));
         const idx = allShapes.indexOf(target);
         rawData[idx] = (rawData[idx] || 0) + 1;
+    } else {
+        onInteraction();
     }
-    onInteraction();
-}, { passive: true });
-
+});
 // Every other interaction type — all call onInteraction()
 document.addEventListener('mousemove',   () => onInteraction(), { passive: true });
 document.addEventListener('wheel',       () => onInteraction(), { passive: true });
