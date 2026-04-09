@@ -132,36 +132,30 @@ touch    : lastPointerType === 'touch' ? 1 : 0
 // ─── CLICK TRACKING ───────────────────────────────────────────────────────────
 // Single pointerdown replaces mousedown + touchstart
 // Fires exactly once per tap on both touchscreen and laptop — no double counting
-// ─── CLICK TRACKING — deduplicated, works for mouse + touch ──────────────────
-let lastTapTime = 0;
-let lastTapIdx  = -1;
-
-document.addEventListener('pointerdown', (e) => {
-    if (isResetting) return;
-    const target = e.target.closest('path, polygon, circle, rect');
-    if (!target) { onInteraction(); return; }
-
-    const now       = Date.now();
-    const allShapes = Array.from(document.querySelectorAll('path, polygon, circle, rect'));
-    const idx       = allShapes.indexOf(target);
-
-    // Same shape within 300ms = same physical tap, skip duplicates
-    if (now - lastTapTime < 300 && lastTapIdx === idx) return;
-
-    lastTapTime = now;
-    lastTapIdx  = idx;
-
-    onInteraction();
-    totalClicks++;
-    rawData[idx] = (rawData[idx] || 0) + 1;
-});
+// ─── CLICK TRACKING — hooks into map's own select() which fires exactly once ──
+const _origSelect = window.select;
+window.select = function(name) {
+    if (!isResetting) {
+        onInteraction();
+        totalClicks++;
+        const target = document.querySelector('path[data-n="' + name + '"]');
+        if (target) {
+            const allShapes = Array.from(document.querySelectorAll('path, polygon, circle, rect'));
+            const idx = allShapes.indexOf(target);
+            rawData[idx] = (rawData[idx] || 0) + 1;
+        }
+    }
+    return _origSelect(name);
+};
 
 // ─── ALL OTHER INTERACTIONS ───────────────────────────────────────────────────
-document.addEventListener('mousemove', () => { if (!isResetting) onInteraction(); }, { passive: true });
-document.addEventListener('wheel',     () => { if (!isResetting) onInteraction(); }, { passive: true });
+document.addEventListener('mousemove',   () => { if (!isResetting) onInteraction(); }, { passive: true });
+document.addEventListener('wheel',       () => { if (!isResetting) onInteraction(); }, { passive: true });
+document.addEventListener('pointerdown', () => { if (!isResetting) onInteraction(); }, { passive: true });
 
 if (viewport) {
     viewport.addEventListener('touchstart',  () => { if (!isResetting) onInteraction(); }, { passive: true });
     viewport.addEventListener('touchmove',   () => { if (!isResetting) onInteraction(); }, { passive: true });
     viewport.addEventListener('wheel',       () => { if (!isResetting) onInteraction(); }, { passive: true });
+    viewport.addEventListener('pointerdown', () => { if (!isResetting) onInteraction(); }, { passive: true });
 }
