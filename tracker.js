@@ -95,12 +95,13 @@ function finalizeSession() {
 
     // 2. Always send — zero-click sessions are valid
     navigator.sendBeacon(scriptUrl, new Blob([JSON.stringify({
-        location : KIOSK_LOCATION,
-        clicks   : totalClicks,
-        duration : sessionDuration,
-        breakdown: JSON.stringify(rawData),
-        type     : totalClicks > 0 ? "CLICKED" : sessionDuration > 5 ? "BROWSED" : "TAPPED"
-    })], { type: 'text/plain' }));
+    location : KIOSK_LOCATION,
+    clicks   : totalClicks,
+    duration : sessionDuration,
+    breakdown: JSON.stringify(rawData),
+    type     : totalClicks > 0 ? "CLICKED" : sessionDuration > 5 ? "BROWSED" : "TAPPED",
+    touch    : ('ontouchstart' in window) ? 1 : 0
+})], { type: 'text/plain' }));
 
     // 3. Wipe
     totalClicks         = 0;
